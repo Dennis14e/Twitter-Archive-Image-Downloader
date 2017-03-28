@@ -5,7 +5,7 @@ $config = array(
     'downloads' => 'downloads/',
     'logs'      => 'logs/'
   ),
-  'user' => 'Dennis14e',
+  'user' => '****TWITTER USERNAME HERE****',
   'min'  => 0,
-  'max'  => 3
+  'max'  => 0
 );

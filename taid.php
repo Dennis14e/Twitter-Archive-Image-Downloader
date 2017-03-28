@@ -6,11 +6,22 @@ if(php_sapi_name() !== 'cli')
   exit('Dieses Skript muss über die Kommandozeile ausgeführt werden.');
 }
 
+function taid_echo($stream, $format, ...$args)
+{
+  fwrite($stream, '[' . date('Y-m-d H:i:s') . '] ' . vsprintf($format, $args) . "\r\n");
+}
+
 
 // config
-require_once 'config.inc.php';
+require_once 'config.php';
 
 // variables
+$time = array(
+  'start' => 0,
+  'end'   => 0,
+  'diff'  => 0
+);
+
 $content = array(
   'csv' => '',
   'web' => ''
@@ -28,12 +39,16 @@ $count = array(
 );
 
 
+// measure time
+$time['start'] = microtime(true);
+
+
 // error log
 if(!file_exists($config['path']['logs']) || !is_dir($config['path']['logs']))
 {
   if(!mkdir($config['path']['logs']))
   {
-    fwrite(STDERR, sprintf("Das Log-Verzeichnis \"%s\" konnte nicht erzeugt werden.\r\n", $config['path']['logs']));
+    taid_echo(STDERR, 'Das Log-Verzeichnis "%s" konnte nicht erzeugt werden.', $config['path']['logs']);
     exit(1);
   }
 }
@@ -47,7 +62,7 @@ ini_set('error_log', $config['path']['logs'] . 'error.log');
 // check archive folder
 if(!file_exists($config['path']['archive']) || !is_dir($config['path']['archive']))
 {
-  fwrite(STDERR, "Das Twitter Archiv wurde nicht gefunden.\r\n");
+  taid_echo(STDERR, 'Das Twitter Archiv wurde nicht gefunden.');
   exit(1);
 }
 
@@ -55,7 +70,7 @@ if(!file_exists($config['path']['archive']) || !is_dir($config['path']['archive'
 // check tweets.csv
 if(!file_exists($config['path']['archive'] . 'tweets.csv') || !is_readable($config['path']['archive'] . 'tweets.csv'))
 {
-  fwrite(STDERR, "Die Datei \"tweets.csv\" aus dem Twitter Archiv existiert nicht oder ist nicht lesbar.\r\n");
+  taid_echo(STDERR, 'Die Datei "tweets.csv" aus dem Twitter Archiv existiert nicht oder ist nicht lesbar.');
   exit(1);
 }
 
@@ -65,104 +80,111 @@ if(!file_exists($config['path']['downloads']) || !is_dir($config['path']['downlo
 {
   if(!mkdir($config['path']['downloads']))
   {
-    fwrite(STDERR, sprintf("Das Downloads-Verzeichnis \"%s\" konnte nicht erzeugt werden.\r\n", $config['path']['downloads']));
+    taid_echo(STDERR, 'Das Downloads-Verzeichnis "%s" konnte nicht erzeugt werden.', $config['path']['downloads']);
     exit(1);
   }
 }
 
 
 // load csv
-fwrite(STDOUT, "Lade Inhalt der Datei \"tweets.csv\".\r\n");
+taid_echo(STDOUT, 'Lade Inhalt der Datei "tweets.csv');
 
 $content['csv'] = file_get_contents($config['path']['archive'] . 'tweets.csv');
 if($content['csv'] === false)
 {
-  fwrite(STDERR, "Lesen der Datei \"tweets.csv\" ist fehlgeschlagen.\r\n");
+  taid_echo(STDERR, 'Lesen der Datei "tweets.csv" ist fehlgeschlagen.');
   exit(1);
 }
 
 
 // get media urls
-fwrite(STDOUT, "Überprüfe Inhalt der Datei \"tweets.csv\" auf Medien-Verlinkungen.\r\n");
+taid_echo(STDOUT, 'Überprüfe Inhalt der Datei "tweets.csv" auf Medien-Verlinkungen.');
 
 $count['csv'] = preg_match_all('/https:\/\/twitter\.com\/' . $config['user'] . '\/status\/([0-9]+)\/photo\/([0-9])/', $content['csv'], $matches['csv'], PREG_SET_ORDER);
 if($count['csv'] === false)
 {
-  fwrite(STDERR, "Es gab ein Problem bei dem Prüfen der Datei \"tweets.csv\" auf Medien-Verlinkungen.\r\n");
+  taid_echo(STDERR, 'Es gab ein Problem bei dem Prüfen der Datei "tweets.csv" auf Medien-Verlinkungen.');
   exit(1);
 }
 
-fwrite(STDOUT, sprintf("Es wurden %d Übereinstimmungen gefunden.\r\n", $count['csv']));
+taid_echo(STDOUT, 'Es wurden %d Übereinstimmungen gefunden.', $count['csv']);
 
 
 // remove duplicates
-fwrite(STDOUT, "Überprüfe Übereinstimmungen auf Duplikate.\r\n");
+taid_echo(STDOUT, 'Überprüfe Übereinstimmungen auf Duplikate.');
 
 $matches['csv'] = array_unique($matches['csv'], SORT_REGULAR);
 $count['csv_duplicates'] = $count['csv'] - count($matches['csv']);
 $count['csv'] -= $count['csv_duplicates'];
 
-fwrite(STDOUT, sprintf("Es wurden %d Duplikate gefunden und entfernt.\r\n", $count['csv_duplicates']));
+taid_echo(STDOUT, 'Es wurden %d Duplikate gefunden und entfernt.', $count['csv_duplicates']);
 
 
 // adjust max entries
-if($config['max'] > $count['csv'])
+if($config['max'] == 0 || $config['max'] > $count['csv'])
 {
   $config['max'] = $count['csv'];
 }
 
 
-fwrite(STDOUT, sprintf("Selektiere Einträge %d bis %d.\r\n", $config['min'], $config['max']));
+taid_echo(STDOUT, 'Selektiere Einträge %d bis %d.', $config['min'], $config['max']);
 
 
 for($csvKey = $config['min']; $csvKey < $config['max']; $csvKey++)
 {
   $csvItem = $matches['csv'][$csvKey];
 
-  fwrite(STDOUT, sprintf("[%d] Überprüfe URL \"%s\" auf Medien.\r\n", $csvKey, $csvItem[0]));
+  taid_echo(STDOUT, '[%d] Überprüfe URL "%s" auf Medien.', $csvKey, $csvItem[0]);
 
   $content['web'] = file_get_contents($csvItem[0]);
   if($content['web'] === false)
   {
-    fwrite(STDERR, sprintf("[%d] Die URL \"%s\" wird übersprungen, da das Herunterladen fehlgeschlagen ist.\r\n", $csvKey, $csvItem[0]));
+    taid_echo(STDERR, '[%d] Die URL "%s" wird übersprungen, da das Herunterladen fehlgeschlagen ist.', $csvKey, $csvItem[0]);
     continue;
   }
 
   $count['web'] = preg_match_all('/<meta[\ ]+property="og:image" content="(https:\/\/pbs.twimg.com\/media\/([^:]*)[^"]*)">/i', $content['web'], $matches['web'], PREG_SET_ORDER);
   if($count['web'] === false)
   {
-    fwrite(STDERR, sprintf("[%d] Lesen der URL \"%s\" ist fehlgeschlagen. Überspringe URL.\r\n", $csvKey, $csvItem[0]));
+    taid_echo(STDERR, '[%d] Lesen der URL "%s" ist fehlgeschlagen. Überspringe URL.', $csvKey, $csvItem[0]);
     continue;
   }
 
-  fwrite(STDOUT, sprintf("[%d] Es wurden %d Übereinstimmungen gefunden.\r\n", $csvKey, $count['web']));
+  taid_echo(STDOUT, '[%d] Es wurden %d Übereinstimmungen gefunden.', $csvKey, $count['web']);
 
   for($webKey = 0; $webKey < $count['web']; $webKey++)
   {
     $webItem = $matches['web'][$webKey];
     $webFilePath = $config['path']['downloads'] . $webItem[2];
 
-    fwrite(STDOUT, sprintf("[%d][%d] Gefundene URL: \"%s\"\r\n", $csvKey, $webKey, $webItem[1]));
+    taid_echo(STDOUT, '[%d][%d] Gefundene URL: "%s".', $csvKey, $webKey, $webItem[1]);
 
     if(file_exists($webFilePath))
     {
-      fwrite(STDOUT, sprintf("[%d][%d] Datei \"%s\" wird nicht heruntergeladen, da diese bereits existiert.\r\n", $csvKey, $webKey, $webItem[2]));
+      taid_echo(STDOUT, '[%d][%d] Datei "%s" wird nicht heruntergeladen, da diese bereits existiert.', $csvKey, $webKey, $webItem[2]);
       continue;
     }
 
-    fwrite(STDOUT, sprintf("[%d][%d] Lade Datei \"%s\" herunter.\r\n", $csvKey, $webKey, $webItem[2]));
+    taid_echo(STDOUT, '[%d][%d] Lade Datei "%s" herunter.', $csvKey, $webKey, $webItem[2]);
 
     $webFileContent = file_get_contents($webItem[1]);
     if($webFileContent === false)
     {
-      fwrite(STDERR, sprintf("[%d][%d] Die URL \"%s\" wird übersprungen, da das Herunterladen fehlgeschlagen ist.\r\n", $csvKey, $webKey, $webItem[1]));
+      taid_echo(STDERR, '[%d][%d] Die URL "%s" wird übersprungen, da das Herunterladen fehlgeschlagen ist.', $csvKey, $webKey, $webItem[1]);
       continue;
     }
 
     if(!file_put_contents($webFilePath, $webFileContent))
     {
-      fwrite(STDERR, sprintf("[%d][%d] Die Datei \"%s\" konnte nicht gespeichert werden.\r\n", $csvKey, $webKey, $webItem[2]));
+      taid_echo(STDERR, '[%d][%d] Die Datei "%s" konnte nicht gespeichert werden.', $csvKey, $webKey, $webItem[2]);
       continue;
     }
   }
 }
+
+
+// measure time
+$time['end'] = microtime(true);
+$time['diff'] = $time['end'] - $time['start'];
+
+taid_echo(STDOUT, 'Programm nach %.2fs beendet.', $time['diff']);
