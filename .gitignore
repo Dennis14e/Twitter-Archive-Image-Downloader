@@ -1,4 +1,10 @@
+# config
 config.php
-archive/
-downloads/
-logs/
+
+# folder structure
+archive/*
+downloads/*
+logs/*
+!archive/.gitkeep
+!downloads/.gitkeep
+!logs/.gitkeep
