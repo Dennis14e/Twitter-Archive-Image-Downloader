@@ -1,8 +1,13 @@
-# Twitter-Archive-Image-Downloader
+# Twitter Archive Image Downloader
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/Dennis14e/Twitter-Archive-Image-Downloader/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/Dennis14e/Twitter-Archive-Image-Downloader/?branch=master)
 [![License](https://img.shields.io/github/license/Dennis14e/Twitter-Archive-Image-Downloader.svg)](LICENSE)
 
 This PHP CLI script scans your Twitter archive for your uploaded images and downloads them.
+It's f*cking simple!
+
+## Requirements
+- at least PHP 5.6
+- Command line access
 
 ## Getting started
 1. Copy `config.sample.php` to `config.php`
