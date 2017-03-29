@@ -1,5 +1,6 @@
 # Twitter-Archive-Image-Downloader
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)](LICENSE)
+[![Scrutinizer](https://img.shields.io/scrutinizer/g/filp/whoops.svg)](https://scrutinizer-ci.com/g/Dennis14e/Twitter-Archive-Image-Downloader/)
 
 This PHP CLI script scans your Twitter archive for your uploaded images and downloads them.
 
