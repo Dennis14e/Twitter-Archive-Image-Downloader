@@ -41,13 +41,10 @@ $time['start'] = microtime(true);
 
 
 // error log
-if(!file_exists($config['path']['logs']) || !is_dir($config['path']['logs']))
+if(!is_dir($config['path']['logs']) && !mkdir($config['path']['logs']))
 {
-  if(!mkdir($config['path']['logs']))
-  {
-    taid_echo(STDERR, 'The log directory "%s" could not be created.', $config['path']['logs']);
-    exit(1);
-  }
+  taid_echo(STDERR, 'The log directory "%s" could not be created.', $config['path']['logs']);
+  exit(1);
 }
 
 ini_set('log_errors', 1);
@@ -57,7 +54,7 @@ ini_set('error_log', $config['path']['logs'] . 'error.log');
 
 
 // check archive folder
-if(!file_exists($config['path']['archive']) || !is_dir($config['path']['archive']))
+if(!is_dir($config['path']['archive']))
 {
   taid_echo(STDERR, 'The Twitter archive was not found.');
   exit(1);
@@ -65,7 +62,7 @@ if(!file_exists($config['path']['archive']) || !is_dir($config['path']['archive'
 
 
 // check tweets.csv
-if(!file_exists($config['path']['archive'] . 'tweets.csv') || !is_readable($config['path']['archive'] . 'tweets.csv'))
+if(!is_readable($config['path']['archive'] . 'tweets.csv'))
 {
   taid_echo(STDERR, 'The file "tweets.csv" from the Twitter archive does not exist or is not readable.');
   exit(1);
@@ -73,13 +70,10 @@ if(!file_exists($config['path']['archive'] . 'tweets.csv') || !is_readable($conf
 
 
 // check downloads folder
-if(!file_exists($config['path']['downloads']) || !is_dir($config['path']['downloads']))
+if(!is_dir($config['path']['downloads']) && !mkdir($config['path']['downloads']))
 {
-  if(!mkdir($config['path']['downloads']))
-  {
-    taid_echo(STDERR, 'The downloads directory "%s" could not be created.', $config['path']['downloads']);
-    exit(1);
-  }
+  taid_echo(STDERR, 'The downloads directory "%s" could not be created.', $config['path']['downloads']);
+  exit(1);
 }
 
 
@@ -123,8 +117,8 @@ if($config['max'] == 0 || $config['max'] > $count['csv'])
   $config['max'] = $count['csv'];
 }
 
-
 taid_echo(STDOUT, 'Select entries %d to %d.', $config['min'], $config['max']);
+
 
 // loop csv matches
 for($csvKey = $config['min']; $csvKey < $config['max']; $csvKey++)
