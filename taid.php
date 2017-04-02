@@ -126,7 +126,7 @@ if($config['max'] == 0 || $config['max'] > $count['csv'])
 
 taid_echo(STDOUT, 'Select entries %d to %d.', $config['min'], $config['max']);
 
-
+// loop csv matches
 for($csvKey = $config['min']; $csvKey < $config['max']; $csvKey++)
 {
   $csvItem = $matches['csv'][$csvKey];
@@ -149,6 +149,7 @@ for($csvKey = $config['min']; $csvKey < $config['max']; $csvKey++)
 
   taid_echo(STDOUT, '[%d] %d matches were found.', $csvKey, $count['web']);
 
+  // loop web matches
   for($webKey = 0; $webKey < $count['web']; $webKey++)
   {
     $webItem = $matches['web'][$webKey];
