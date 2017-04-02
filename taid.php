@@ -6,11 +6,8 @@ if(php_sapi_name() !== 'cli')
   exit('This script must be run from the command line.');
 }
 
-function taid_echo($stream, $format, ...$args)
-{
-  fwrite($stream, '[' . date('Y-m-d H:i:s') . '] ' . vsprintf($format, $args) . "\r\n");
-}
-
+// functions
+require_once 'functions.php';
 
 // config
 require_once 'config.php';
@@ -187,4 +184,4 @@ for($csvKey = $config['min']; $csvKey < $config['max']; $csvKey++)
 $time['end'] = microtime(true);
 $time['diff'] = $time['end'] - $time['start'];
 
-taid_echo(STDOUT, 'Program finished after %.2fs.', $time['diff']);
+taid_echo(STDOUT, 'Program finished after %s.', seconds2human($time['diff']));
