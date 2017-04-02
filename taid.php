@@ -110,7 +110,7 @@ taid_echo(STDOUT, '%d matches were found.', $count['csv']);
 // remove duplicates
 taid_echo(STDOUT, 'Check matches for duplicates.');
 
-$matches['csv'] = array_unique($matches['csv'], SORT_REGULAR);
+$matches['csv'] = array_values(array_unique($matches['csv'], SORT_REGULAR));
 $count['csv_duplicates'] = $count['csv'] - count($matches['csv']);
 $count['csv'] -= $count['csv_duplicates'];
 
