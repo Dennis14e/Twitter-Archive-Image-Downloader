@@ -27,7 +27,6 @@ function seconds2human($duration)
     {
       case 0:
         continue;
-        break;
 
       case 1:
         $parts[] = $div . ' ' . $name;
