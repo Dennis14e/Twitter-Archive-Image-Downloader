@@ -171,6 +171,13 @@ for($csvKey = $config['min']; $csvKey < $config['max']; $csvKey++)
       taid_echo(STDERR, '[%d][%d] Failed to save file "%s".', $csvKey, $webKey, $webItem[2]);
       continue;
     }
+
+    $webHeaders = get_headers($webItem[1], 1);
+    if($webHeaders !== false && array_key_exists('Last-Modified', $webHeaders))
+    {
+      taid_echo(STDOUT, '[%d][%d] Update local headers of "%s".', $csvKey, $webKey, $webItem[2]);
+      touch($webFilePath, strtotime($webHeaders['Last-Modified']));
+    }
   }
 }
 
