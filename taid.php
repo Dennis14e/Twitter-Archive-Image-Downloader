@@ -172,11 +172,11 @@ for($csvKey = $config['min']; $csvKey < $config['max']; $csvKey++)
       continue;
     }
 
-    $webHeaders = get_headers($webItem[1], 1);
-    if($webHeaders !== false && array_key_exists('Last-Modified', $webHeaders))
+    $webHeaders = array_change_key_case(get_headers($webItem[1], 1), CASE_LOWER);
+    if(array_key_exists('last-modified', $webHeaders))
     {
       taid_echo(STDOUT, '[%d][%d] Update local headers of "%s".', $csvKey, $webKey, $webItem[2]);
-      touch($webFilePath, strtotime($webHeaders['Last-Modified']));
+      touch($webFilePath, strtotime($webHeaders['last-modified']));
     }
   }
 }
