@@ -6,6 +6,9 @@ if(php_sapi_name() !== 'cli')
   exit('This script must be run from the command line.');
 }
 
+// change dir
+chdir(__DIR__);
+
 // functions
 require_once 'functions.php';
 
@@ -16,23 +19,18 @@ require_once 'config.php';
 $time = array(
   'start' => 0,
   'end'   => 0,
-  'diff'  => 0
+  'diff'  => 0,
 );
 
-$content = array(
-  'csv' => '',
-  'web' => ''
-);
+$js_files = array();
 
-$matches = array(
-  'csv' => array(),
-  'web' => array()
-);
+$media_urls = array();
 
 $count = array(
-  'csv' => 0,
-  'csv_duplicates' => 0,
-  'web' => 0
+  'media'        => 0,
+  'duplicates'   => 0,
+  'tweets'       => 0,
+  'tweets_media' => 0,
 );
 
 
@@ -61,10 +59,10 @@ if(!is_dir($config['path']['archive']))
 }
 
 
-// check tweets.csv
-if(!is_readable($config['path']['archive'] . 'tweets.csv'))
+// check data/js/tweets folder
+if(!is_readable($config['path']['archive'] . 'data/js/tweets/'))
 {
-  taid_echo(STDERR, 'The file "tweets.csv" from the Twitter archive does not exist or is not readable.');
+  taid_echo(STDERR, 'The folder "data/js/tweets/" from the Twitter archive does not exist or is not readable.');
   exit(1);
 }
 
@@ -77,107 +75,125 @@ if(!is_dir($config['path']['downloads']) && !mkdir($config['path']['downloads'])
 }
 
 
-// load csv
-taid_echo(STDOUT, 'Load the "tweets.csv" file.');
+// get .js-files
+taid_echo(STDOUT, 'Create array of javascript files.');
 
-$content['csv'] = file_get_contents($config['path']['archive'] . 'tweets.csv');
-if($content['csv'] === false)
+foreach(glob($config['path']['archive'] . 'data/js/tweets/*.js') as $path)
 {
-  taid_echo(STDERR, 'Reading the "tweets.csv" file failed.');
-  exit(1);
+  $name = pathinfo($path, PATHINFO_FILENAME);
+  $js_files[$name] = $path;
 }
 
 
-// get media urls
-taid_echo(STDOUT, 'Check the contents of the "tweets.csv" file for media links.');
+// get content of .js-files
+taid_echo(STDOUT, 'Get content of the javascript files.');
 
-$count['csv'] = preg_match_all('/https:\/\/twitter\.com\/' . $config['user'] . '\/status\/([0-9]+)\/photo\/([0-9])/', $content['csv'], $matches['csv'], PREG_SET_ORDER);
-if($count['csv'] === false)
+foreach($js_files as $js_name => $js_path)
 {
-  taid_echo(STDERR, 'There was a problem checking the "tweets.csv" file for media links.');
-  exit(1);
+  $string = file_get_contents($js_path);
+  if($string === false)
+  {
+    taid_echo(STDERR, '[%s] Failed to load file "%s".', $js_name, $js_path);
+    continue;
+  }
+
+  // remove first line
+  $string = str_chop_lines($string, 1);
+
+  // save to array
+  $tweets = json_decode($string, true);
+  if(!is_array($tweets))
+  {
+    taid_echo(STDERR, '[%s] Failed to decode file "%s" to JSON.', $js_name, $js_path);
+    continue;
+  }
+
+  taid_echo(STDOUT, '[%s] Check tweets for media urls.', $js_name);
+
+  $count['tweets'] = count($tweets);
+  $count['tweets_media'] = 0;
+
+  foreach($tweets as $tweet)
+  {
+    if(empty($tweet['entities']['media']))
+    {
+      // tweet has no media
+      continue;
+    }
+
+    foreach($tweet['entities']['media'] as $media)
+    {
+      // only images, remove video thumbnails
+      if(!preg_match('/\/media\//', $media['media_url']))
+      {
+        continue;
+      }
+
+      $count['tweets_media']++;
+
+      $media_urls[] = ($config['https'])
+        ? $media['media_url_https']
+        : $media['media_url'];
+    }
+  }
+
+  taid_echo(STDOUT, '[%s] Found %d media urls in %d tweets.', $js_name, $count['tweets_media'], $count['tweets']);
 }
 
-taid_echo(STDOUT, '%d matches were found.', $count['csv']);
+$count['media'] = count($media_urls);
 
 
 // remove duplicates
-taid_echo(STDOUT, 'Check matches for duplicates.');
+taid_echo(STDOUT, 'Check urls for duplicates.');
 
-$matches['csv'] = array_values(array_unique($matches['csv'], SORT_REGULAR));
-$count['csv_duplicates'] = $count['csv'] - count($matches['csv']);
-$count['csv'] -= $count['csv_duplicates'];
+$media_urls = array_values(array_unique($media_urls, SORT_REGULAR));
+$count['duplicates'] = $count['media'] - count($media_urls);
+$count['media'] -= $count['duplicates'];
 
-taid_echo(STDOUT, '%d duplicates were found and removed.', $count['csv_duplicates']);
-
+taid_echo(STDOUT, '%d duplicates were found and removed.', $count['duplicates']);
 
 // adjust max entries
-if($config['max'] == 0 || $config['max'] > $count['csv'])
+if($config['max'] == 0 || $config['max'] > $count['media'])
 {
-  $config['max'] = $count['csv'];
+  $config['max'] = $count['media'];
 }
 
 taid_echo(STDOUT, 'Select entries %d to %d.', $config['min'], $config['max']);
 
 
-// loop csv matches
-for($csvKey = $config['min']; $csvKey < $config['max']; $csvKey++)
+// loop media urls
+for($i = $config['min']; $i < $config['max']; $i++)
 {
-  $csvItem = $matches['csv'][$csvKey];
+  $url  = $media_urls[$i];
+  $name = pathinfo($url, PATHINFO_BASENAME);
+  $path = $config['path']['downloads'] . $name;
 
-  taid_echo(STDOUT, '[%d] Check URL "%s" on media.', $csvKey, $csvItem[0]);
-
-  $content['web'] = file_get_contents($csvItem[0]);
-  if($content['web'] === false)
+  if(file_exists($path))
   {
-    taid_echo(STDERR, '[%d] The URL "%s" is skipped because the download failed.', $csvKey, $csvItem[0]);
+    taid_echo(STDOUT, 'File "%s" is not downloaded because it already exists.', $name);
     continue;
   }
 
-  $count['web'] = preg_match_all('/<meta[\ ]+property="og:image" content="(https:\/\/pbs.twimg.com\/media\/([^:]*)[^"]*)">/i', $content['web'], $matches['web'], PREG_SET_ORDER);
-  if($count['web'] === false)
+  taid_echo(STDOUT, 'Download file "%s".', $name);
+
+  $content = file_get_contents($url);
+  if($content === false)
   {
-    taid_echo(STDERR, '[%d] Unable to read the URL "%s". Skipping URL.', $csvKey, $csvItem[0]);
+    taid_echo(STDERR, 'The URL "%s" is skipped because the download failed.', $url);
     continue;
   }
 
-  taid_echo(STDOUT, '[%d] %d matches were found.', $csvKey, $count['web']);
-
-  // loop web matches
-  for($webKey = 0; $webKey < $count['web']; $webKey++)
+  if(!file_put_contents($path, $content))
   {
-    $webItem = $matches['web'][$webKey];
-    $webFilePath = $config['path']['downloads'] . $webItem[2];
+    taid_echo(STDERR, 'Failed to save file "%s".', $name);
+    continue;
+  }
 
-    taid_echo(STDOUT, '[%d][%d] Found URL: "%s".', $csvKey, $webKey, $webItem[1]);
-
-    if(file_exists($webFilePath))
-    {
-      taid_echo(STDOUT, '[%d][%d] File "%s" is not downloaded because it already exists.', $csvKey, $webKey, $webItem[2]);
-      continue;
-    }
-
-    taid_echo(STDOUT, '[%d][%d] Download file "%s".', $csvKey, $webKey, $webItem[2]);
-
-    $webFileContent = file_get_contents($webItem[1]);
-    if($webFileContent === false)
-    {
-      taid_echo(STDERR, '[%d][%d] The URL "%s" is skipped because the download failed.', $csvKey, $webKey, $webItem[1]);
-      continue;
-    }
-
-    if(!file_put_contents($webFilePath, $webFileContent))
-    {
-      taid_echo(STDERR, '[%d][%d] Failed to save file "%s".', $csvKey, $webKey, $webItem[2]);
-      continue;
-    }
-
-    $webHeaders = array_change_key_case(get_headers($webItem[1], 1), CASE_LOWER);
-    if(array_key_exists('last-modified', $webHeaders))
-    {
-      taid_echo(STDOUT, '[%d][%d] Update local headers of "%s".', $csvKey, $webKey, $webItem[2]);
-      touch($webFilePath, strtotime($webHeaders['last-modified']));
-    }
+  $headers = array_change_key_case(get_headers($url, 1), CASE_LOWER);
+  if(array_key_exists('last-modified', $headers))
+  {
+    taid_echo(STDOUT, 'Update local headers of "%s".', $name);
+    touch($path, strtotime($headers['last-modified']));
   }
 }
 
