@@ -16,6 +16,11 @@ require_once 'functions.php';
 require_once 'config.php';
 
 // variables
+$csv = array(
+  'handle'  => null,
+  'content' => array(),
+);
+
 $time = array(
   'start' => 0,
   'end'   => 0,
@@ -36,6 +41,18 @@ $count = array(
 
 // measure time
 $time['start'] = microtime(true);
+
+
+// open csv file
+$csv['handle'] = fopen($config['path']['csv'], 'w');
+$csv['content'][] = array(
+  'date_check',
+  'date_file',
+  'url_display',
+  'url_media',
+  'type',
+  'status',
+);
 
 
 // check/create logs folder
@@ -175,6 +192,15 @@ for ($i = $config['min']; $i < $config['max']; $i++)
   if (file_exists($image['path']))
   {
     taid_echo(STDOUT, '[%d] File "%s" is not downloaded because it already exists.', $i, $image['name']);
+    $csv['content'][] = array(
+      date('Y-m-d H:i:s'),
+      date('Y-m-d H:i:s', filemtime($image['path'])),
+      $image['display_url'],
+      $image['image_url'],
+      $image['type'],
+      'file_exists',
+    );
+
     continue;
   }
 
@@ -184,12 +210,30 @@ for ($i = $config['min']; $i < $config['max']; $i++)
   if ($image['content'] === false)
   {
     taid_echo(STDERR, '[%d] The URL "%s" is skipped because the download failed.', $i, $image['image_url']);
+    $csv['content'][] = array(
+      date('Y-m-d H:i:s'),
+      '',
+      $image['display_url'],
+      $image['image_url'],
+      $image['type'],
+      'download_failed',
+    );
+
     continue;
   }
 
   if (!file_put_contents($image['path'], $image['content']))
   {
     taid_echo(STDERR, '[%d] Failed to save file "%s".', $i, $image['name']);
+    $csv['content'][] = array(
+      date('Y-m-d H:i:s'),
+      '',
+      $image['display_url'],
+      $image['image_url'],
+      $image['type'],
+      'save_failed',
+    );
+
     continue;
   }
 
@@ -199,7 +243,24 @@ for ($i = $config['min']; $i < $config['max']; $i++)
     taid_echo(STDOUT, '[%d] Update local headers of "%s".', $i, $image['name']);
     touch($image['path'], strtotime($image['headers']['last-modified']));
   }
+
+  $csv['content'][] = array(
+    date('Y-m-d H:i:s'),
+    date('Y-m-d H:i:s', filemtime($image['path'])),
+    $image['display_url'],
+    $image['image_url'],
+    $image['type'],
+    'success',
+  );
 }
+
+
+// write and close csv file
+foreach ($csv['content'] as $line)
+{
+  fputcsv($csv['handle'], $line);
+}
+fclose($csv['handle']);
 
 
 // measure time
