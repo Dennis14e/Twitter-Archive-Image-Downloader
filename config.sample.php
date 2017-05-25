@@ -6,7 +6,6 @@ $config = array(
     'logs'      => 'logs/',
   ),
   'https' => true,
-  'user'  => '****TWITTER USERNAME HERE****',
   'min'   => 0,
   'max'   => 0,
 );

@@ -12,8 +12,8 @@ It's f*cking simple!
 ## Getting started
 1. Download your Twitter archive [here](https://twitter.com/settings/your_twitter_data)
 2. Copy `config.sample.php` to `config.php`
-3. Move your unzipped Twitter archive to `archive/`
-4. Replace `****TWITTER USERNAME HERE****` in `config.php` with your twitter username
+3. Change config if necessary
+4. Move your unzipped Twitter archive to `archive/`
 5. Start the script with the command `php taid.php`
 6. ???
 7. Profit!
