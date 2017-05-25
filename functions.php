@@ -28,7 +28,7 @@ function seconds2human($duration)
   {
     $div = floor($duration / $dur);
 
-    switch($div)
+    switch ($div)
     {
       case 0:
         continue;

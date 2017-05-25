@@ -113,7 +113,7 @@ foreach ($js_files as $js_name => $js_path)
   $count['tweets'] = count($tweets);
   $count['tweets_media'] = 0;
 
-  foreach($tweets as $tweet)
+  foreach ($tweets as $tweet)
   {
     if (empty($tweet['entities']['media']))
     {
@@ -124,7 +124,7 @@ foreach ($js_files as $js_name => $js_path)
     foreach ($tweet['entities']['media'] as $media)
     {
       // only images, remove video thumbnails
-      if(!preg_match('/\/media\//', $media['media_url']))
+      if (!preg_match('/\/media\//', $media['media_url']))
       {
         continue;
       }
