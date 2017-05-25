@@ -170,29 +170,29 @@ for($i = $config['min']; $i < $config['max']; $i++)
 
   if(file_exists($path))
   {
-    taid_echo(STDOUT, 'File "%s" is not downloaded because it already exists.', $name);
+    taid_echo(STDOUT, '[%d] File "%s" is not downloaded because it already exists.', $i, $name);
     continue;
   }
 
-  taid_echo(STDOUT, 'Download file "%s".', $name);
+  taid_echo(STDOUT, '[%d] Download file "%s".', $i, $name);
 
   $content = file_get_contents($url);
   if($content === false)
   {
-    taid_echo(STDERR, 'The URL "%s" is skipped because the download failed.', $url);
+    taid_echo(STDERR, '[%d] The URL "%s" is skipped because the download failed.', $i, $url);
     continue;
   }
 
   if(!file_put_contents($path, $content))
   {
-    taid_echo(STDERR, 'Failed to save file "%s".', $name);
+    taid_echo(STDERR, '[%d] Failed to save file "%s".', $i, $name);
     continue;
   }
 
   $headers = array_change_key_case(get_headers($url, 1), CASE_LOWER);
   if(array_key_exists('last-modified', $headers))
   {
-    taid_echo(STDOUT, 'Update local headers of "%s".', $name);
+    taid_echo(STDOUT, '[%d] Update local headers of "%s".', $i, $name);
     touch($path, strtotime($headers['last-modified']));
   }
 }
