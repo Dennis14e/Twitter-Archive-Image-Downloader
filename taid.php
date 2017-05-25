@@ -135,6 +135,7 @@ foreach ($js_files as $js_name => $js_path)
       $images[] = array(
         'image_url'   => ($config['https']) ? $media['media_url_https'] : $media['media_url'],
         'display_url' => $media['display_url'],
+        'retweet'     => isset($tweet['retweeted_status']),
       );
     }
   }
@@ -168,6 +169,7 @@ for ($i = $config['min']; $i < $config['max']; $i++)
 {
   $image = $images[$i];
   $image['name'] = pathinfo($image['image_url'], PATHINFO_BASENAME);
+  $image['type'] = ($image['retweet'] === true) ? 'rt' : 'oc';
   $image['path'] = $config['path']['downloads'] . $image['type'] . '/' . $image['name'];
 
   if (file_exists($image['path']))

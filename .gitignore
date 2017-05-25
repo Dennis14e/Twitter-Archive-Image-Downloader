@@ -3,8 +3,10 @@ config.php
 
 # folder structure
 archive/*
-downloads/*
+downloads/oc/*
+downloads/rt/*
 logs/*
 !archive/.gitkeep
-!downloads/.gitkeep
+!downloads/oc/.gitkeep
+!downloads/rt/.gitkeep
 !logs/.gitkeep
