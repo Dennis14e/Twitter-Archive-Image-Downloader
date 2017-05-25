@@ -4,6 +4,11 @@ function taid_echo($stream, $format, ...$args)
   fwrite($stream, '[' . date('Y-m-d H:i:s') . '] ' . vsprintf($format, $args) . "\r\n");
 }
 
+function taid_is_dir($path)
+{
+  return is_dir($path) || mkdir($path);
+}
+
 function str_chop_lines($str, $lines = 1)
 {
   return implode("\n", array_slice(explode("\n", $str), $lines));

@@ -38,13 +38,14 @@ $count = array(
 $time['start'] = microtime(true);
 
 
-// error log
-if (!is_dir($config['path']['logs']) && !mkdir($config['path']['logs']))
+// check/create logs folder
+if (!taid_is_dir($config['path']['logs']))
 {
   taid_echo(STDERR, 'The log directory "%s" could not be created.', $config['path']['logs']);
   exit(1);
 }
 
+// error log
 ini_set('log_errors', 1);
 ini_set('display_errors', 0);
 ini_set('error_reporting', E_ALL);
@@ -67,8 +68,8 @@ if (!is_readable($config['path']['archive'] . 'data/js/tweets/'))
 }
 
 
-// check downloads folder
-if (!is_dir($config['path']['downloads']) && !mkdir($config['path']['downloads']))
+// check/create downloads folder
+if (!taid_is_dir($config['path']['downloads'] . 'oc/') || !taid_is_dir($config['path']['downloads'] . 'rt/'))
 {
   taid_echo(STDERR, 'The downloads directory "%s" could not be created.', $config['path']['downloads']);
   exit(1);
