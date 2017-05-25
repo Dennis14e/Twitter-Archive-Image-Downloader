@@ -10,7 +10,7 @@ It's f*cking simple!
 - Command line access
 
 ## Getting started
-1. Download your Twitter archive [here](https://twitter.com/settings/your_twitter_data)
+1. Download your Twitter archive [here](https://twitter.com/settings/account#tweet_export)
 2. Copy `config.sample.php` to `config.php`
 3. Change config if necessary
 4. Move your unzipped Twitter archive to `archive/`
