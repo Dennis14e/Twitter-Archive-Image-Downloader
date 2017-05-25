@@ -19,12 +19,12 @@ function seconds2human($duration)
   );
 
   $parts = array();
-  if($duration < 1)
+  if ($duration < 1)
   {
     $duration = 1;
   }
 
-  foreach($periods as $name => $dur)
+  foreach ($periods as $name => $dur)
   {
     $div = floor($duration / $dur);
 
@@ -47,7 +47,7 @@ function seconds2human($duration)
 
   $last = array_pop($parts);
 
-  if(empty($parts))
+  if (empty($parts))
   {
     return $last;
   }

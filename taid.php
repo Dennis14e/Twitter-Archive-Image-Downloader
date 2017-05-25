@@ -1,6 +1,6 @@
 <?php
 // cli-only
-if(php_sapi_name() !== 'cli')
+if (php_sapi_name() !== 'cli')
 {
   http_response_code(400);
   exit('This script must be run from the command line.');
@@ -39,7 +39,7 @@ $time['start'] = microtime(true);
 
 
 // error log
-if(!is_dir($config['path']['logs']) && !mkdir($config['path']['logs']))
+if (!is_dir($config['path']['logs']) && !mkdir($config['path']['logs']))
 {
   taid_echo(STDERR, 'The log directory "%s" could not be created.', $config['path']['logs']);
   exit(1);
@@ -52,7 +52,7 @@ ini_set('error_log', $config['path']['logs'] . 'error.log');
 
 
 // check archive folder
-if(!is_dir($config['path']['archive']))
+if (!is_dir($config['path']['archive']))
 {
   taid_echo(STDERR, 'The Twitter archive was not found.');
   exit(1);
@@ -60,7 +60,7 @@ if(!is_dir($config['path']['archive']))
 
 
 // check data/js/tweets folder
-if(!is_readable($config['path']['archive'] . 'data/js/tweets/'))
+if (!is_readable($config['path']['archive'] . 'data/js/tweets/'))
 {
   taid_echo(STDERR, 'The folder "data/js/tweets/" from the Twitter archive does not exist or is not readable.');
   exit(1);
@@ -68,7 +68,7 @@ if(!is_readable($config['path']['archive'] . 'data/js/tweets/'))
 
 
 // check downloads folder
-if(!is_dir($config['path']['downloads']) && !mkdir($config['path']['downloads']))
+if (!is_dir($config['path']['downloads']) && !mkdir($config['path']['downloads']))
 {
   taid_echo(STDERR, 'The downloads directory "%s" could not be created.', $config['path']['downloads']);
   exit(1);
@@ -78,7 +78,7 @@ if(!is_dir($config['path']['downloads']) && !mkdir($config['path']['downloads'])
 // get .js-files
 taid_echo(STDOUT, 'Create array of javascript files.');
 
-foreach(glob($config['path']['archive'] . 'data/js/tweets/*.js') as $path)
+foreach (glob($config['path']['archive'] . 'data/js/tweets/*.js') as $path)
 {
   $name = pathinfo($path, PATHINFO_FILENAME);
   $js_files[$name] = $path;
@@ -88,10 +88,10 @@ foreach(glob($config['path']['archive'] . 'data/js/tweets/*.js') as $path)
 // get content of .js-files
 taid_echo(STDOUT, 'Get content of the javascript files.');
 
-foreach($js_files as $js_name => $js_path)
+foreach ($js_files as $js_name => $js_path)
 {
   $string = file_get_contents($js_path);
-  if($string === false)
+  if ($string === false)
   {
     taid_echo(STDERR, '[%s] Failed to load file "%s".', $js_name, $js_path);
     continue;
@@ -102,7 +102,7 @@ foreach($js_files as $js_name => $js_path)
 
   // save to array
   $tweets = json_decode($string, true);
-  if(!is_array($tweets))
+  if (!is_array($tweets))
   {
     taid_echo(STDERR, '[%s] Failed to decode file "%s" to JSON.', $js_name, $js_path);
     continue;
@@ -115,13 +115,13 @@ foreach($js_files as $js_name => $js_path)
 
   foreach($tweets as $tweet)
   {
-    if(empty($tweet['entities']['media']))
+    if (empty($tweet['entities']['media']))
     {
       // tweet has no media
       continue;
     }
 
-    foreach($tweet['entities']['media'] as $media)
+    foreach ($tweet['entities']['media'] as $media)
     {
       // only images, remove video thumbnails
       if(!preg_match('/\/media\//', $media['media_url']))
@@ -153,7 +153,7 @@ $count['media'] -= $count['duplicates'];
 taid_echo(STDOUT, '%d duplicates were found and removed.', $count['duplicates']);
 
 // adjust max entries
-if($config['max'] == 0 || $config['max'] > $count['media'])
+if ($config['max'] == 0 || $config['max'] > $count['media'])
 {
   $config['max'] = $count['media'];
 }
@@ -162,13 +162,13 @@ taid_echo(STDOUT, 'Select entries %d to %d.', $config['min'], $config['max']);
 
 
 // loop media urls
-for($i = $config['min']; $i < $config['max']; $i++)
+for ($i = $config['min']; $i < $config['max']; $i++)
 {
   $url  = $media_urls[$i];
   $name = pathinfo($url, PATHINFO_BASENAME);
   $path = $config['path']['downloads'] . $name;
 
-  if(file_exists($path))
+  if (file_exists($path))
   {
     taid_echo(STDOUT, '[%d] File "%s" is not downloaded because it already exists.', $i, $name);
     continue;
@@ -177,20 +177,20 @@ for($i = $config['min']; $i < $config['max']; $i++)
   taid_echo(STDOUT, '[%d] Download file "%s".', $i, $name);
 
   $content = file_get_contents($url);
-  if($content === false)
+  if ($content === false)
   {
     taid_echo(STDERR, '[%d] The URL "%s" is skipped because the download failed.', $i, $url);
     continue;
   }
 
-  if(!file_put_contents($path, $content))
+  if (!file_put_contents($path, $content))
   {
     taid_echo(STDERR, '[%d] Failed to save file "%s".', $i, $name);
     continue;
   }
 
   $headers = array_change_key_case(get_headers($url, 1), CASE_LOWER);
-  if(array_key_exists('last-modified', $headers))
+  if (array_key_exists('last-modified', $headers))
   {
     taid_echo(STDOUT, '[%d] Update local headers of "%s".', $i, $name);
     touch($path, strtotime($headers['last-modified']));
