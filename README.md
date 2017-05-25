@@ -10,9 +10,10 @@ It's f*cking simple!
 - Command line access
 
 ## Getting started
-1. Copy `config.sample.php` to `config.php`
-2. Move your unzipped twitter archive to `archive/`
-3. Replace `****TWITTER USERNAME HERE****` in `config.php` with your twitter username
-4. Start the script with the command `php taid.php`
-5. ???
-6. Profit!
+1. Download your Twitter archive [here](https://twitter.com/settings/your_twitter_data)
+2. Copy `config.sample.php` to `config.php`
+3. Move your unzipped Twitter archive to `archive/`
+4. Replace `****TWITTER USERNAME HERE****` in `config.php` with your twitter username
+5. Start the script with the command `php taid.php`
+6. ???
+7. Profit!
