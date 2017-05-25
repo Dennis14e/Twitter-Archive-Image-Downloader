@@ -24,13 +24,13 @@ $time = array(
 
 $js_files = array();
 
-$media_urls = array();
+$images = array();
 
 $count = array(
-  'media'        => 0,
-  'duplicates'   => 0,
-  'tweets'       => 0,
-  'tweets_media' => 0,
+  'images'        => 0,
+  'duplicates'    => 0,
+  'tweets'        => 0,
+  'tweets_images' => 0,
 );
 
 
@@ -112,7 +112,7 @@ foreach ($js_files as $js_name => $js_path)
   taid_echo(STDOUT, '[%s] Check tweets for media urls.', $js_name);
 
   $count['tweets'] = count($tweets);
-  $count['tweets_media'] = 0;
+  $count['tweets_images'] = 0;
 
   foreach ($tweets as $tweet)
   {
@@ -130,71 +130,72 @@ foreach ($js_files as $js_name => $js_path)
         continue;
       }
 
-      $count['tweets_media']++;
+      $count['tweets_images']++;
 
-      $media_urls[] = ($config['https'])
-        ? $media['media_url_https']
-        : $media['media_url'];
+      $images[] = array(
+        'image_url'   => ($config['https']) ? $media['media_url_https'] : $media['media_url'],
+        'display_url' => $media['display_url'],
+      );
     }
   }
 
-  taid_echo(STDOUT, '[%s] Found %d media urls in %d tweets.', $js_name, $count['tweets_media'], $count['tweets']);
+  taid_echo(STDOUT, '[%s] Found %d image urls in %d tweets.', $js_name, $count['tweets_images'], $count['tweets']);
 }
 
-$count['media'] = count($media_urls);
+$count['images'] = count($images);
 
 
 // remove duplicates
 taid_echo(STDOUT, 'Check urls for duplicates.');
 
-$media_urls = array_values(array_unique($media_urls, SORT_REGULAR));
-$count['duplicates'] = $count['media'] - count($media_urls);
-$count['media'] -= $count['duplicates'];
+$images = array_unique($images, SORT_REGULAR);
+$count['duplicates'] = $count['images'] - count($images);
+$count['images'] -= $count['duplicates'];
 
 taid_echo(STDOUT, '%d duplicates were found and removed.', $count['duplicates']);
 
 // adjust max entries
-if ($config['max'] == 0 || $config['max'] > $count['media'])
+if ($config['max'] == 0 || $config['max'] > $count['images'])
 {
-  $config['max'] = $count['media'];
+  $config['max'] = $count['images'];
 }
 
 taid_echo(STDOUT, 'Select entries %d to %d.', $config['min'], $config['max']);
 
 
-// loop media urls
+// loop image urls
 for ($i = $config['min']; $i < $config['max']; $i++)
 {
-  $url  = $media_urls[$i];
-  $name = pathinfo($url, PATHINFO_BASENAME);
-  $path = $config['path']['downloads'] . $name;
+  $image = $images[$i];
+  $image['name'] = pathinfo($image['image_url'], PATHINFO_BASENAME);
+  $image['path'] = $config['path']['downloads'] . $image['type'] . '/' . $image['name'];
 
-  if (file_exists($path))
+  if (file_exists($image['path']))
   {
-    taid_echo(STDOUT, '[%d] File "%s" is not downloaded because it already exists.', $i, $name);
+    taid_echo(STDOUT, '[%d] File "%s" is not downloaded because it already exists.', $i, $image['name']);
     continue;
   }
 
-  taid_echo(STDOUT, '[%d] Download file "%s".', $i, $name);
+  taid_echo(STDOUT, '[%d] Download file "%s".', $i, $image['name']);
 
-  $content = file_get_contents($url);
-  if ($content === false)
+  $image['content'] = file_get_contents($image['image_url']);
+  if ($image['content'] === false)
   {
-    taid_echo(STDERR, '[%d] The URL "%s" is skipped because the download failed.', $i, $url);
+    taid_echo(STDERR, '[%d] The URL "%s" is skipped because the download failed.', $i, $image['image_url']);
     continue;
   }
 
-  if (!file_put_contents($path, $content))
+  if (!file_put_contents($image['path'], $image['content']))
   {
-    taid_echo(STDERR, '[%d] Failed to save file "%s".', $i, $name);
+    taid_echo(STDERR, '[%d] Failed to save file "%s".', $i, $image['name']);
     continue;
   }
 
-  $headers = array_change_key_case(get_headers($url, 1), CASE_LOWER);
-  if (array_key_exists('last-modified', $headers))
+  $image['headers'] = array_change_key_case(get_headers($image['image_url'], 1), CASE_LOWER);
+  if (array_key_exists('last-modified', $image['headers']))
   {
-    taid_echo(STDOUT, '[%d] Update local headers of "%s".', $i, $name);
-    touch($path, strtotime($headers['last-modified']));
+    taid_echo(STDOUT, '[%d] Update local headers of "%s".', $i, $image['name']);
+    touch($image['path'], strtotime($image['headers']['last-modified']));
   }
 }
 
